@@ -36,7 +36,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const taskId = String(form.get("taskId") ?? "");
     const status = form.get("status");
     if (taskId && isTaskStatus(status)) {
-      updateTask(taskId, { status });
+      const me = await getCurrentMember(request);
+      updateTask(taskId, { status }, me?.id);
     }
     return { ok: true };
   }
@@ -60,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
         endDate: toISODate(addDays(base, 3)),
         parentId: null,
         createdAt: toISODate(base),
-      });
+      }, me?.id);
     }
     return { ok: true };
   }

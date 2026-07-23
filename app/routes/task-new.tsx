@@ -42,6 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: "終了日は開始日以降にしてください。" };
   }
 
+  const me = await getCurrentMember(request);
   const typeRaw = form.get("type");
   const task = createTask({
     title,
@@ -55,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
     endDate,
     parentId: String(form.get("parentId") ?? "") || null,
     createdAt: toISODate(today()),
-  });
+  }, me?.id);
   return redirect(`/issues/${task.id}`);
 }
 

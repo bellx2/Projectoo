@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { addDays, toISODate, today } from "./date";
 import type {
+  Activity,
   Comment,
   Database,
   Knowledge,
@@ -346,6 +347,20 @@ function seed(): Database {
     },
   ];
 
+  const activities: Activity[] = [
+    { id: "a1", taskId: "t15", memberId: "m3", type: "status", from: "in_progress", to: "done", createdAt: dt(-9, "18:00:00") },
+    { id: "a2", taskId: "t1", memberId: "m1", type: "status", from: "open", to: "in_progress", createdAt: dt(-6, "09:30:00") },
+    { id: "a3", taskId: "t7", memberId: "m2", type: "status", from: "open", to: "in_progress", createdAt: dt(-6, "10:15:00") },
+    { id: "a4", taskId: "t2", memberId: "m1", type: "status", from: "open", to: "in_progress", createdAt: dt(-5, "09:10:00") },
+    { id: "a5", taskId: "t3", memberId: "m1", type: "status", from: "open", to: "in_progress", createdAt: dt(-5, "09:12:00") },
+    { id: "a6", taskId: "t10", memberId: "m3", type: "status", from: "open", to: "in_progress", createdAt: dt(-8, "13:00:00") },
+    { id: "a7", taskId: "t10", memberId: "m3", type: "status", from: "in_progress", to: "resolved", createdAt: dt(-4, "17:15:00") },
+    { id: "a8", taskId: "t8", memberId: "m2", type: "status", from: "in_progress", to: "done", createdAt: dt(-3, "16:40:00") },
+    { id: "a9", taskId: "t12", memberId: "m3", type: "status", from: "open", to: "in_progress", createdAt: dt(-2, "10:00:00") },
+    { id: "a10", taskId: "t16", memberId: "m1", type: "create", createdAt: dt(-1, "09:05:00") },
+    { id: "a11", taskId: "t9", memberId: "m2", type: "status", from: "in_progress", to: "resolved", createdAt: dt(0, "10:20:00") },
+  ];
+
   const knowledge: Knowledge[] = [
     {
       id: "k1",
@@ -381,12 +396,13 @@ function seed(): Database {
     },
   ];
 
-  return { members, projects, tasks, comments, knowledge };
+  return { members, projects, tasks, comments, activities, knowledge };
 }
 
 // 旧フォーマットの db.json を読んだ場合に不足フィールドを補完する
 function migrate(db: Database): Database {
   if (!db.comments) db.comments = [];
+  if (!db.activities) db.activities = [];
   const counters = new Map<string, number>();
   for (const t of db.tasks) {
     if (typeof t.key === "number") {
@@ -449,7 +465,21 @@ function nextKey(db: Database, projectId: string): number {
   );
 }
 
-export function createTask(input: Omit<Task, "id" | "key">): Task {
+export function nowStamp(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function logActivity(input: Omit<Activity, "id" | "createdAt">) {
+  const db = getDb();
+  db.activities.push({ ...input, id: newId("a"), createdAt: nowStamp() });
+}
+
+export function createTask(
+  input: Omit<Task, "id" | "key">,
+  actorId?: string,
+): Task {
   const db = getDb();
   const task: Task = {
     ...input,
@@ -457,6 +487,11 @@ export function createTask(input: Omit<Task, "id" | "key">): Task {
     key: nextKey(db, input.projectId),
   };
   db.tasks.push(task);
+  logActivity({
+    taskId: task.id,
+    memberId: actorId ?? task.assigneeId,
+    type: "create",
+  });
   save();
   return task;
 }
@@ -464,6 +499,7 @@ export function createTask(input: Omit<Task, "id" | "key">): Task {
 export function updateTask(
   id: string,
   patch: Partial<Omit<Task, "id" | "key">>,
+  actorId?: string,
 ): Task | null {
   const db = getDb();
   const task = db.tasks.find((t) => t.id === id);
@@ -471,6 +507,15 @@ export function updateTask(
   // 案件をまたいで移動した場合はキーを採番し直す
   if (patch.projectId && patch.projectId !== task.projectId) {
     task.key = nextKey(db, patch.projectId);
+  }
+  if (patch.status && patch.status !== task.status) {
+    logActivity({
+      taskId: task.id,
+      memberId: actorId ?? task.assigneeId,
+      type: "status",
+      from: task.status,
+      to: patch.status,
+    });
   }
   Object.assign(task, patch);
   save();
@@ -484,6 +529,7 @@ export function deleteTask(id: string) {
   );
   db.tasks = db.tasks.filter((t) => !removed.has(t.id));
   db.comments = db.comments.filter((c) => !removed.has(c.taskId));
+  db.activities = db.activities.filter((a) => !removed.has(a.taskId));
   save();
 }
 

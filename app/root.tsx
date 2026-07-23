@@ -89,6 +89,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    to: "/report",
+    label: "週報",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="4" y="3" width="12" height="14" rx="1.5" />
+        <path d="M7 7h6M7 10h6M7 13h4" />
+      </svg>
+    ),
+  },
+  {
     to: "/members",
     label: "メンバー",
     icon: (

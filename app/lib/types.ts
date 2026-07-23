@@ -45,6 +45,16 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface Activity {
+  id: string;
+  taskId: string;
+  memberId: string;
+  type: "create" | "status";
+  from?: TaskStatus;
+  to?: TaskStatus;
+  createdAt: string;
+}
+
 export interface Knowledge {
   id: string;
   title: string;
@@ -59,5 +69,6 @@ export interface Database {
   projects: Project[];
   tasks: Task[];
   comments: Comment[];
+  activities: Activity[];
   knowledge: Knowledge[];
 }

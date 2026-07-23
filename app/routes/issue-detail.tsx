@@ -11,6 +11,7 @@ import {
   createComment,
   deleteTask,
   getDb,
+  nowStamp,
   updateTask,
 } from "~/lib/db.server";
 import { getCurrentMember } from "~/lib/session.server";
@@ -50,12 +51,16 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const comments = db.comments
     .filter((c) => c.taskId === task.id)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const activities = db.activities
+    .filter((a) => a.taskId === task.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return {
     task,
     project,
     parent,
     children,
     comments,
+    activities,
     members: db.members,
     keyLabel: project ? issueKey(project.code, task.key) : `#${task.key}`,
   };
@@ -74,7 +79,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "status") {
     const status = form.get("status");
     if (isTaskStatus(status)) {
-      updateTask(id, { status });
+      const me = await getCurrentMember(request);
+      updateTask(id, { status }, me?.id);
     }
     return { ok: true };
   }
@@ -88,7 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         taskId: id,
         authorId: me.id,
         body,
-        createdAt: new Date().toISOString().slice(0, 19),
+        createdAt: nowStamp(),
       });
     }
     return { ok: true };
@@ -103,8 +109,16 @@ function formatDateTime(s: string): string {
 }
 
 export default function IssueDetail() {
-  const { task, project, parent, children, comments, members, keyLabel } =
-    useLoaderData<typeof loader>();
+  const {
+    task,
+    project,
+    parent,
+    children,
+    comments,
+    activities,
+    members,
+    keyLabel,
+  } = useLoaderData<typeof loader>();
   const statusFetcher = useFetcher();
 
   const member = (id: string) => members.find((m) => m.id === id);
@@ -233,6 +247,7 @@ export default function IssueDetail() {
           </div>
         </div>
 
+        <div>
         <div className="card panel">
           <h2>プロパティ</h2>
           <table className="props">
@@ -311,6 +326,45 @@ export default function IssueDetail() {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div className="card panel" style={{ marginTop: 14 }}>
+          <h2>変更履歴</h2>
+          <div className="history">
+            {activities.map((a) => {
+              const actor = member(a.memberId);
+              return (
+                <div className="history-item" key={a.id}>
+                  <div className="history-line">
+                    <strong>{actor?.name ?? "不明"}</strong>
+                    {a.type === "create" ? (
+                      <> が課題を追加</>
+                    ) : (
+                      <>
+                        {" が "}
+                        {a.from && (
+                          <span className={`badge st-${a.from}`}>
+                            {STATUS_LABEL[a.from]}
+                          </span>
+                        )}
+                        {" → "}
+                        {a.to && (
+                          <span className={`badge st-${a.to}`}>
+                            {STATUS_LABEL[a.to]}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="muted">{formatDateTime(a.createdAt)}</div>
+                </div>
+              );
+            })}
+            {activities.length === 0 && (
+              <p className="muted">履歴はまだありません。</p>
+            )}
+          </div>
+        </div>
         </div>
       </div>
     </div>

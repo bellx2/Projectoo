@@ -7,6 +7,7 @@ import {
 } from "react-router";
 import { TaskForm } from "~/components/TaskForm";
 import { deleteTask, getDb, updateTask } from "~/lib/db.server";
+import { getCurrentMember } from "~/lib/session.server";
 import type { Priority, TaskStatus } from "~/lib/types";
 import { isIssueType, isTaskStatus } from "~/lib/status";
 
@@ -52,6 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: "終了日は開始日以降にしてください。" };
   }
 
+  const me = await getCurrentMember(request);
   const typeRaw = form.get("type");
   updateTask(id, {
     title,
@@ -64,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     startDate,
     endDate,
     parentId: String(form.get("parentId") ?? "") || null,
-  });
+  }, me?.id);
   return redirect(`/issues/${id}`);
 }
 

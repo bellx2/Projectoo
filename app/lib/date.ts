@@ -41,3 +41,10 @@ export function isWeekend(d: Date): boolean {
   const w = d.getDay();
   return w === 0 || w === 6;
 }
+
+/** その週の月曜日を返す */
+export function startOfWeek(d: Date): Date {
+  const r = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  r.setDate(r.getDate() - ((r.getDay() + 6) % 7));
+  return r;
+}

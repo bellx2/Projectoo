@@ -994,6 +994,88 @@ details.collapse > summary::-webkit-details-marker {
   font-family: inherit;
 }
 
+.history {
+  display: flex;
+  flex-direction: column;
+}
+.history-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+.history-item:last-child {
+  border-bottom: none;
+}
+.history-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.history-item .muted {
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+/* ---------- report ---------- */
+.report-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.week-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.week-label {
+  font-weight: 700;
+  font-size: 15px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.report-member {
+  margin-bottom: 18px;
+}
+.report-member-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.report-member-head .name {
+  font-size: 16px;
+  font-weight: 700;
+}
+.report-section {
+  padding: 14px 18px;
+}
+.report-section + .report-section {
+  margin-top: 10px;
+}
+.report-section h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.report-empty {
+  color: var(--text-sub);
+  font-size: 12.5px;
+}
+.report-comment-body {
+  color: var(--text-sub);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 560px;
+}
+
 /* ---------- knowledge ---------- */
 .knowledge-grid {
   display: grid;
