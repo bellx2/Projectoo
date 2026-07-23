@@ -13,6 +13,7 @@ import {
   getDb,
   updateTask,
 } from "~/lib/db.server";
+import { getCurrentMember } from "~/lib/session.server";
 import { formatYMD } from "~/lib/date";
 import {
   PRIORITY_ARROW,
@@ -79,12 +80,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (intent === "comment") {
+    const me = await getCurrentMember(request);
+    if (!me) throw redirect("/login");
     const body = String(form.get("body") ?? "").trim();
-    const authorId = String(form.get("authorId") ?? "");
     if (body) {
       createComment({
         taskId: id,
-        authorId,
+        authorId: me.id,
         body,
         createdAt: new Date().toISOString().slice(0, 19),
       });
@@ -223,13 +225,6 @@ export default function IssueDetail() {
                 required
               />
               <div className="row">
-                <select name="authorId">
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
                 <button type="submit" className="btn primary">
                   コメントする
                 </button>

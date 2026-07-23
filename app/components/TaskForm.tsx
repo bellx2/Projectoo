@@ -14,6 +14,7 @@ export function TaskForm({
   parentCandidates,
   error,
   showDelete,
+  defaultAssigneeId,
 }: {
   task?: Task;
   members: Member[];
@@ -21,6 +22,7 @@ export function TaskForm({
   parentCandidates: Task[];
   error?: string;
   showDelete?: boolean;
+  defaultAssigneeId?: string;
 }) {
   return (
     <div className="card panel" style={{ maxWidth: 760 }}>
@@ -46,7 +48,11 @@ export function TaskForm({
         </div>
         <div className="field">
           <label htmlFor="t-assignee">担当者 *</label>
-          <select id="t-assignee" name="assigneeId" defaultValue={task?.assigneeId}>
+          <select
+            id="t-assignee"
+            name="assigneeId"
+            defaultValue={task?.assigneeId ?? defaultAssigneeId}
+          >
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}

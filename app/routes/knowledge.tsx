@@ -7,6 +7,7 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { createKnowledge, getDb } from "~/lib/db.server";
+import { getCurrentMember } from "~/lib/session.server";
 import { formatYMD, toISODate, today } from "~/lib/date";
 
 export function meta() {
@@ -34,6 +35,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const me = await getCurrentMember(request);
+  if (!me) throw redirect("/login");
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const body = String(form.get("body") ?? "").trim();
@@ -41,7 +44,6 @@ export async function action({ request }: ActionFunctionArgs) {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-  const authorId = String(form.get("authorId") ?? "");
   if (!title || !body) {
     return { error: "タイトルと本文は必須です。" };
   }
@@ -49,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     title,
     body,
     tags,
-    authorId,
+    authorId: me.id,
     updatedAt: toISODate(today()),
   });
   return redirect(`/knowledge/${article.id}`);
@@ -118,19 +120,9 @@ export default function Knowledge() {
         </summary>
         <div style={{ padding: "0 18px 18px" }}>
           <Form method="post" className="form-grid">
-            <div className="field">
+            <div className="field full">
               <label htmlFor="k-title">タイトル *</label>
               <input id="k-title" name="title" required />
-            </div>
-            <div className="field">
-              <label htmlFor="k-author">執筆者</label>
-              <select id="k-author" name="authorId">
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <div className="field full">
               <label htmlFor="k-tags">タグ (カンマ区切り)</label>

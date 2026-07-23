@@ -4,6 +4,8 @@ Bun + React Router v7 (framework mode) で構築した、シンプルな Backlog
 
 ## 機能
 
+- **簡易ログイン** — パスワードなしで自分のメンバーを選んでログイン (Cookie セッション、30日)。コメント・Wiki は自動的にログインユーザー名義になり、課題の担当者もデフォルトで自分になります
+- **メンバー管理** — メンバーの追加 (名前 / イニシャル / カラー) と削除。担当課題・コメント・Wiki記事を持つメンバーと最後の1人は削除不可
 - **課題管理 (Backlog 風)** — 課題キー (`PH-1` 形式)、種別 (タスク / バグ / 要望 / その他)、優先度 (↑高 / →中 / ↓低)、親子課題
 - **課題詳細ページ** — プロパティパネル、状態のクイック変更、コメントスレッド
 - **ダッシュボード** — 課題数・完了率・期限超過などのサマリー、案件別進捗、最近の更新 (コメントフィード)
@@ -42,10 +44,13 @@ app/
   lib/
     types.ts          # 型定義
     db.server.ts      # JSONファイル永続化ストア + シードデータ
+    session.server.ts # ログインセッション (Cookie)
     date.ts / status.ts
   components/
     TaskForm.tsx      # 課題フォーム (新規/編集 共通)
   routes/
+    login.tsx         # /login, logout.ts
+    members.tsx       # /members
     dashboard.tsx     # /
     kanban.tsx        # /kanban
     gantt.tsx         # /gantt

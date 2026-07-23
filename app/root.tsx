@@ -1,4 +1,5 @@
 import {
+  Form,
   Links,
   Meta,
   NavLink,
@@ -6,9 +7,22 @@ import {
   Scripts,
   ScrollRestoration,
   isRouteErrorResponse,
+  redirect,
+  useLoaderData,
   useRouteError,
+  type LoaderFunctionArgs,
 } from "react-router";
+import { getCurrentMember } from "~/lib/session.server";
 import "./app.css";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const currentMember = await getCurrentMember(request);
+  if (!currentMember && url.pathname !== "/login") {
+    throw redirect("/login");
+  }
+  return { currentMember };
+}
 
 const NAV_ITEMS = [
   {
@@ -74,6 +88,18 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    to: "/members",
+    label: "メンバー",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <circle cx="7.5" cy="7" r="3" />
+        <path d="M2.5 17c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5" />
+        <circle cx="14.5" cy="8" r="2.3" />
+        <path d="M13.5 12.6c2.2.2 3.6 1.5 4 4.4" />
+      </svg>
+    ),
+  },
 ];
 
 export function meta() {
@@ -102,6 +128,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const { currentMember } = useLoaderData<typeof loader>();
+
+  // 未ログイン時 (=/login) はサイドバーなしで表示する
+  if (!currentMember) {
+    return <Outlet />;
+  }
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -121,6 +154,17 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
+        <div className="sidebar-user">
+          <span className="avatar" style={{ background: currentMember.color }}>
+            {currentMember.initial}
+          </span>
+          <span className="sidebar-user-name">{currentMember.name}</span>
+          <Form method="post" action="/logout">
+            <button type="submit" className="sidebar-logout">
+              ログアウト
+            </button>
+          </Form>
+        </div>
       </aside>
       <main className="main">
         <Outlet />

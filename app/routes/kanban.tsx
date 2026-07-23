@@ -6,6 +6,7 @@ import {
   type ActionFunctionArgs,
 } from "react-router";
 import { createTask, getDb, updateTask } from "~/lib/db.server";
+import { getCurrentMember } from "~/lib/session.server";
 import { addDays, formatMD, parseISODate, toISODate, today } from "~/lib/date";
 import {
   PRIORITY_ARROW,
@@ -45,13 +46,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const status = form.get("status");
     if (title && isTaskStatus(status)) {
       const db = getDb();
+      const me = await getCurrentMember(request);
       const base = today();
       createTask({
         title,
         description: "",
         projectId: db.projects[0]?.id ?? "",
         type: "task",
-        assigneeId: db.members[0]?.id ?? "",
+        assigneeId: me?.id ?? db.members[0]?.id ?? "",
         status,
         priority: "medium",
         startDate: toISODate(base),

@@ -5,6 +5,7 @@ import type {
   Comment,
   Database,
   Knowledge,
+  Member,
   Project,
   Task,
 } from "./types";
@@ -492,6 +493,20 @@ export function createComment(input: Omit<Comment, "id">): Comment {
   db.comments.push(comment);
   save();
   return comment;
+}
+
+export function createMember(input: Omit<Member, "id">): Member {
+  const db = getDb();
+  const member: Member = { ...input, id: newId("m") };
+  db.members.push(member);
+  save();
+  return member;
+}
+
+export function deleteMember(id: string) {
+  const db = getDb();
+  db.members = db.members.filter((m) => m.id !== id);
+  save();
 }
 
 export function createProject(input: Omit<Project, "id">): Project {

@@ -3,9 +3,11 @@ import {
   useActionData,
   useLoaderData,
   type ActionFunctionArgs,
+  type LoaderFunctionArgs,
 } from "react-router";
 import { TaskForm } from "~/components/TaskForm";
 import { createTask, getDb } from "~/lib/db.server";
+import { getCurrentMember } from "~/lib/session.server";
 import { toISODate, today } from "~/lib/date";
 import type { Priority, TaskStatus } from "~/lib/types";
 import { isIssueType, isTaskStatus } from "~/lib/status";
@@ -14,12 +16,14 @@ export function meta() {
   return [{ title: "課題の追加 | ProjectHub" }];
 }
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
   const db = getDb();
+  const me = await getCurrentMember(request);
   return {
     members: db.members,
     projects: db.projects,
     parentCandidates: db.tasks.filter((t) => t.parentId === null),
+    defaultAssigneeId: me?.id,
   };
 }
 
@@ -56,7 +60,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function TaskNew() {
-  const { members, projects, parentCandidates } = useLoaderData<typeof loader>();
+  const { members, projects, parentCandidates, defaultAssigneeId } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   return (
@@ -72,6 +77,7 @@ export default function TaskNew() {
         projects={projects}
         parentCandidates={parentCandidates}
         error={actionData?.error}
+        defaultAssigneeId={defaultAssigneeId}
       />
     </div>
   );

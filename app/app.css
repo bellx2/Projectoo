@@ -64,10 +64,12 @@ a:hover {
   flex-shrink: 0;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
-  padding: 18px 10px;
+  padding: 18px 10px 12px;
   position: sticky;
   top: 0;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .brand {
@@ -82,6 +84,38 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px 4px;
+  border-top: 1px solid #2a4a3d;
+}
+.sidebar-user-name {
+  flex: 1;
+  min-width: 0;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sidebar-logout {
+  background: none;
+  border: none;
+  color: var(--sidebar-text);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-family: inherit;
+}
+.sidebar-logout:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .nav-item {
@@ -198,6 +232,83 @@ a:hover {
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
+}
+.avatar.lg {
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+}
+
+/* ---------- login ---------- */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--content-bg);
+  padding: 24px;
+}
+.login-card {
+  width: 400px;
+  max-width: 100%;
+  padding: 28px 30px;
+}
+.login-brand {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--accent-strong);
+}
+.login-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.login-member {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.login-member .name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+}
+.login-member:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- members ---------- */
+.color-pick {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+.color-swatch input {
+  appearance: none;
+  margin: 0;
+}
+.color-swatch:has(input:checked) {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 
 .badge {

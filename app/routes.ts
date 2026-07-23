@@ -1,6 +1,9 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
+  route("login", "routes/login.tsx"),
+  route("logout", "routes/logout.ts"),
+  route("members", "routes/members.tsx"),
   index("routes/dashboard.tsx"),
   route("kanban", "routes/kanban.tsx"),
   route("gantt", "routes/gantt.tsx"),
