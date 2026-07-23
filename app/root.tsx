@@ -56,7 +56,7 @@ const NAV_ITEMS = [
   },
   {
     to: "/knowledge",
-    label: "ナレッジ",
+    label: "Wiki",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
         <path d="M10 4.5C8.5 3.5 6.5 3 4 3v13c2.5 0 4.5.5 6 1.5 1.5-1 3.5-1.5 6-1.5V3c-2.5 0-4.5.5-6 1.5Z" />

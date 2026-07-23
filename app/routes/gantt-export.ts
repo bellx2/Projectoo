@@ -1,5 +1,10 @@
 import { getDb } from "~/lib/db.server";
-import { STATUS_LABEL, PRIORITY_LABEL } from "~/lib/status";
+import {
+  PRIORITY_LABEL,
+  STATUS_LABEL,
+  TYPE_LABEL,
+  issueKey,
+} from "~/lib/status";
 
 // Excel でそのまま開ける UTF-8(BOM 付き) CSV を返す
 export async function loader() {
@@ -11,8 +16,13 @@ export async function loader() {
   const parentTitle = (id: string | null) =>
     id ? (db.tasks.find((t) => t.id === id)?.title ?? "") : "";
 
+  const projectCode = (id: string) =>
+    db.projects.find((p) => p.id === id)?.code ?? "";
+
   const esc = (v: string) => `"${v.replaceAll('"', '""')}"`;
   const header = [
+    "キー",
+    "種別",
     "件名",
     "親課題",
     "案件",
@@ -20,12 +30,15 @@ export async function loader() {
     "ステータス",
     "優先度",
     "開始日",
-    "終了日",
+    "期限日",
+    "登録日",
   ];
   const lines = [header.map(esc).join(",")];
   for (const t of db.tasks) {
     lines.push(
       [
+        issueKey(projectCode(t.projectId), t.key),
+        TYPE_LABEL[t.type],
         t.title,
         parentTitle(t.parentId),
         projectName(t.projectId),
@@ -34,6 +47,7 @@ export async function loader() {
         PRIORITY_LABEL[t.priority],
         t.startDate,
         t.endDate,
+        t.createdAt,
       ]
         .map(esc)
         .join(","),

@@ -9,6 +9,7 @@ export default [
   route("knowledge", "routes/knowledge.tsx"),
   route("knowledge/:id", "routes/knowledge-detail.tsx"),
   route("issues", "routes/issues.tsx"),
+  route("issues/:id", "routes/issue-detail.tsx"),
   route("tasks/new", "routes/task-new.tsx"),
   route("tasks/:id/edit", "routes/task-edit.tsx"),
 ] satisfies RouteConfig;

@@ -3,6 +3,7 @@ import {
   PRIORITY_LABEL,
   STATUS_LABEL,
   STATUS_ORDER,
+  TYPE_LABEL,
 } from "~/lib/status";
 import type { Member, Project, Task } from "~/lib/types";
 
@@ -49,6 +50,16 @@ export function TaskForm({
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="t-type">種別</label>
+          <select id="t-type" name="type" defaultValue={task?.type ?? "task"}>
+            {Object.entries(TYPE_LABEL).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
               </option>
             ))}
           </select>

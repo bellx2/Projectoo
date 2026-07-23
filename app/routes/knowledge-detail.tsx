@@ -11,7 +11,7 @@ import { formatYMD } from "~/lib/date";
 
 export function meta({ data }: { data?: { article?: { title: string } } }) {
   return [
-    { title: `${data?.article?.title ?? "ナレッジ"} | ProjectHub` },
+    { title: `${data?.article?.title ?? "Wiki"} | ProjectHub` },
   ];
 }
 
@@ -38,7 +38,7 @@ export default function KnowledgeDetail() {
       <div className="page-head">
         <div>
           <p className="page-sub">
-            <Link to="/knowledge">← ナレッジ一覧</Link>
+            <Link to="/knowledge">← Wiki一覧</Link>
           </p>
           <h1 className="page-title">{article.title}</h1>
           <div className="kn-foot" style={{ marginTop: 6 }}>

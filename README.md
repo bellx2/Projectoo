@@ -1,15 +1,19 @@
 # ProjectHub
 
-Bun + React Router v7 (framework mode) で構築したプロジェクト管理ツール。
+Bun + React Router v7 (framework mode) で構築した、シンプルな Backlog 風プロジェクト管理ツール。
 
 ## 機能
 
-- **ダッシュボード** — 課題数・完了率・期限超過などのサマリー、案件別進捗、メンバー別の担当状況
+- **課題管理 (Backlog 風)** — 課題キー (`PH-1` 形式)、種別 (タスク / バグ / 要望 / その他)、優先度 (↑高 / →中 / ↓低)、親子課題
+- **課題詳細ページ** — プロパティパネル、状態のクイック変更、コメントスレッド
+- **ダッシュボード** — 課題数・完了率・期限超過などのサマリー、案件別進捗、最近の更新 (コメントフィード)
 - **カンバンボード** — 未対応 / 処理中 / 処理済み / 完了 の4カラム。ドラッグ&ドロップでステータス更新、カラム内でのクイック追加
 - **ガントチャート** — 担当者別グルーピング、親子課題の折りたたみ、今日・週末のハイライト、表示設定、CSV(Excel)出力
 - **案件一覧** — 案件ごとの進捗・期間・課題数、新規案件の追加
-- **ナレッジ** — 手順書・ルールの共有。タグ・キーワード検索、記事の作成・削除
-- **課題** — 全案件横断の課題テーブル。案件 / 状態 / 担当者 / キーワードで絞り込み
+- **Wiki** — 手順書・ルールの共有。タグ・キーワード検索、記事の作成・削除
+- **課題一覧** — 全案件横断の課題テーブル。案件 / 状態 / 担当者 / キーワードで絞り込み
+
+ステータスカラーは Backlog 風 (未対応=赤 / 処理中=青 / 処理済み=緑 / 完了=黄緑) です。
 
 ## 起動方法
 
@@ -47,7 +51,8 @@ app/
     gantt.tsx         # /gantt
     gantt-export.ts   # /gantt/export (CSV)
     projects.tsx      # /projects
-    knowledge.tsx     # /knowledge, knowledge-detail.tsx
+    knowledge.tsx     # /knowledge (Wiki), knowledge-detail.tsx
     issues.tsx        # /issues
+    issue-detail.tsx  # /issues/:id (詳細 + コメント)
     task-new.tsx      # /tasks/new, task-edit.tsx
 ```

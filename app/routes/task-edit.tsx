@@ -8,7 +8,7 @@ import {
 import { TaskForm } from "~/components/TaskForm";
 import { deleteTask, getDb, updateTask } from "~/lib/db.server";
 import type { Priority, TaskStatus } from "~/lib/types";
-import { isTaskStatus } from "~/lib/status";
+import { isIssueType, isTaskStatus } from "~/lib/status";
 
 export function meta() {
   return [{ title: "課題の編集 | ProjectHub" }];
@@ -52,10 +52,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: "終了日は開始日以降にしてください。" };
   }
 
+  const typeRaw = form.get("type");
   updateTask(id, {
     title,
     description: String(form.get("description") ?? ""),
     projectId: String(form.get("projectId") ?? ""),
+    type: isIssueType(typeRaw) ? typeRaw : "task",
     assigneeId: String(form.get("assigneeId") ?? ""),
     status,
     priority: (String(form.get("priority") ?? "medium") as Priority),
@@ -63,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     endDate,
     parentId: String(form.get("parentId") ?? "") || null,
   });
-  return redirect("/gantt");
+  return redirect(`/issues/${id}`);
 }
 
 export default function TaskEdit() {

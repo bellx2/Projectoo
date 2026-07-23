@@ -1,6 +1,7 @@
 export type TaskStatus = "open" | "in_progress" | "resolved" | "done";
 export type Priority = "high" | "medium" | "low";
 export type ProjectStatus = "planned" | "active" | "done";
+export type IssueType = "task" | "bug" | "request" | "other";
 
 export interface Member {
   id: string;
@@ -22,7 +23,9 @@ export interface Project {
 
 export interface Task {
   id: string;
+  key: number;
   projectId: string;
+  type: IssueType;
   title: string;
   description: string;
   assigneeId: string;
@@ -31,6 +34,15 @@ export interface Task {
   startDate: string;
   endDate: string;
   parentId: string | null;
+  createdAt: string;
+}
+
+export interface Comment {
+  id: string;
+  taskId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
 }
 
 export interface Knowledge {
@@ -46,5 +58,6 @@ export interface Database {
   members: Member[];
   projects: Project[];
   tasks: Task[];
+  comments: Comment[];
   knowledge: Knowledge[];
 }

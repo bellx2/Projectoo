@@ -8,10 +8,13 @@ import {
 import { createTask, getDb, updateTask } from "~/lib/db.server";
 import { addDays, formatMD, parseISODate, toISODate, today } from "~/lib/date";
 import {
+  PRIORITY_ARROW,
   PRIORITY_LABEL,
   STATUS_LABEL,
   STATUS_ORDER,
+  TYPE_LABEL,
   isTaskStatus,
+  issueKey,
 } from "~/lib/status";
 import type { Task, TaskStatus } from "~/lib/types";
 
@@ -47,12 +50,14 @@ export async function action({ request }: ActionFunctionArgs) {
         title,
         description: "",
         projectId: db.projects[0]?.id ?? "",
+        type: "task",
         assigneeId: db.members[0]?.id ?? "",
         status,
         priority: "medium",
         startDate: toISODate(base),
         endDate: toISODate(addDays(base, 3)),
         parentId: null,
+        createdAt: toISODate(base),
       });
     }
     return { ok: true };
@@ -146,17 +151,30 @@ export default function Kanban() {
                         e.dataTransfer.setData("text/task-id", task.id)
                       }
                     >
+                      <div
+                        className="issue-head-line"
+                        style={{ marginBottom: 2 }}
+                      >
+                        <span className={`tchip tp-${task.type}`}>
+                          {TYPE_LABEL[task.type]}
+                        </span>
+                        <span className="ikey">
+                          {project ? issueKey(project.code, task.key) : ""}
+                        </span>
+                      </div>
                       <div className="kcard-title">
-                        <Link to={`/tasks/${task.id}/edit`}>{task.title}</Link>
+                        <Link to={`/issues/${task.id}`}>{task.title}</Link>
                       </div>
                       <div className="kcard-meta">
                         <span className="left">
-                          {project && <span className="chip">{project.code}</span>}
                           <span className={"muted" + (overdue ? " overdue" : "")}>
                             〜{formatMD(task.endDate)}
                           </span>
-                          <span className={`badge pr-${task.priority}`}>
-                            {PRIORITY_LABEL[task.priority]}
+                          <span
+                            className={`prio prio-${task.priority}`}
+                            title={`優先度: ${PRIORITY_LABEL[task.priority]}`}
+                          >
+                            {PRIORITY_ARROW[task.priority]}
                           </span>
                         </span>
                         {member && (

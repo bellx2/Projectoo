@@ -9,17 +9,25 @@ export function meta() {
 
 export async function loader() {
   const db = getDb();
+  const recentComments = [...db.comments]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 5)
+    .map((c) => ({
+      ...c,
+      task: db.tasks.find((t) => t.id === c.taskId) ?? null,
+    }));
   return {
     members: db.members,
     projects: db.projects,
     tasks: db.tasks,
     knowledge: db.knowledge.slice(0, 4),
+    recentComments,
     todayStr: toISODate(today()),
   };
 }
 
 export default function Dashboard() {
-  const { members, projects, tasks, knowledge, todayStr } =
+  const { members, projects, tasks, knowledge, recentComments, todayStr } =
     useLoaderData<typeof loader>();
 
   const count = (s: string) => tasks.filter((t) => t.status === s).length;
@@ -110,7 +118,7 @@ export default function Dashboard() {
                     </span>
                   )}
                   <span className="grow">
-                    <Link to={`/tasks/${t.id}/edit`}>{t.title}</Link>
+                    <Link to={`/issues/${t.id}`}>{t.title}</Link>
                   </span>
                   <span className={`badge st-${t.status}`}>
                     {STATUS_LABEL[t.status]}
@@ -121,6 +129,36 @@ export default function Dashboard() {
             })}
             {upcoming.length === 0 && (
               <p className="muted">期限が近い課題はありません。</p>
+            )}
+          </div>
+
+          <div className="card panel">
+            <h2>最近の更新</h2>
+            {recentComments.map((c) => {
+              const m = members.find((x) => x.id === c.authorId);
+              return (
+                <div className="list-row" key={c.id}>
+                  {m && (
+                    <span className="avatar" style={{ background: m.color }}>
+                      {m.initial}
+                    </span>
+                  )}
+                  <span className="grow">
+                    <span className="muted">{m?.name} がコメント: </span>
+                    {c.task ? (
+                      <Link to={`/issues/${c.task.id}`}>{c.task.title}</Link>
+                    ) : (
+                      <span className="muted">(削除済みの課題)</span>
+                    )}
+                  </span>
+                  <span className="muted">
+                    {formatMD(c.createdAt.slice(0, 10))}
+                  </span>
+                </div>
+              );
+            })}
+            {recentComments.length === 0 && (
+              <p className="muted">まだ更新はありません。</p>
             )}
           </div>
         </div>
@@ -181,7 +219,7 @@ export default function Dashboard() {
           </div>
 
           <div className="card panel">
-            <h2>最近のナレッジ</h2>
+            <h2>最近のWiki</h2>
             {knowledge.map((k) => (
               <div className="list-row" key={k.id}>
                 <span className="grow">

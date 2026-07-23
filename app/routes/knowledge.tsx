@@ -10,7 +10,7 @@ import { createKnowledge, getDb } from "~/lib/db.server";
 import { formatYMD, toISODate, today } from "~/lib/date";
 
 export function meta() {
-  return [{ title: "ナレッジ | ProjectHub" }];
+  return [{ title: "Wiki | ProjectHub" }];
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -62,7 +62,7 @@ export default function Knowledge() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1 className="page-title">ナレッジ</h1>
+          <h1 className="page-title">Wiki</h1>
           <p className="page-sub">チームの手順書・ルール・ノウハウ共有</p>
         </div>
       </div>

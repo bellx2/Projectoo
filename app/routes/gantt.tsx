@@ -307,7 +307,7 @@ function MemberGroup({
                     </span>
                   </button>
                 ) : null}
-                <Link to={`/tasks/${task.id}/edit`}>{task.title}</Link>
+                <Link to={`/issues/${task.id}`}>{task.title}</Link>
                 {editMode && (
                   <Link
                     to={`/tasks/${task.id}/edit`}

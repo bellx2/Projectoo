@@ -7,9 +7,12 @@ import {
 import { getDb } from "~/lib/db.server";
 import { formatMD, toISODate, today } from "~/lib/date";
 import {
+  PRIORITY_ARROW,
   PRIORITY_LABEL,
   STATUS_LABEL,
   STATUS_ORDER,
+  TYPE_LABEL,
+  issueKey,
 } from "~/lib/status";
 
 export function meta() {
@@ -102,12 +105,14 @@ export default function Issues() {
         <table className="table">
           <thead>
             <tr>
+              <th>キー</th>
+              <th>種別</th>
               <th>件名</th>
-              <th>案件</th>
               <th>担当者</th>
               <th>優先度</th>
               <th>状態</th>
-              <th>期間</th>
+              <th>期限日</th>
+              <th>登録日</th>
             </tr>
           </thead>
           <tbody>
@@ -118,10 +123,19 @@ export default function Issues() {
               return (
                 <tr key={t.id}>
                   <td>
-                    <Link to={`/tasks/${t.id}/edit`}>{t.title}</Link>
+                    <Link className="ikey" to={`/issues/${t.id}`}>
+                      {p ? issueKey(p.code, t.key) : `#${t.key}`}
+                    </Link>
+                  </td>
+                  <td>
+                    <span className={`tchip tp-${t.type}`}>
+                      {TYPE_LABEL[t.type]}
+                    </span>
+                  </td>
+                  <td>
+                    <Link to={`/issues/${t.id}`}>{t.title}</Link>
                     {t.parentId && <span className="muted"> (子課題)</span>}
                   </td>
-                  <td>{p && <span className="chip">{p.code}</span>}</td>
                   <td>
                     {m && (
                       <span className="g-assignee">
@@ -136,8 +150,8 @@ export default function Issues() {
                     )}
                   </td>
                   <td>
-                    <span className={`badge pr-${t.priority}`}>
-                      {PRIORITY_LABEL[t.priority]}
+                    <span className={`prio prio-${t.priority}`}>
+                      {PRIORITY_ARROW[t.priority]} {PRIORITY_LABEL[t.priority]}
                     </span>
                   </td>
                   <td>
@@ -149,14 +163,17 @@ export default function Issues() {
                     className={"muted" + (overdue ? " overdue" : "")}
                     style={{ whiteSpace: "nowrap" }}
                   >
-                    {formatMD(t.startDate)} 〜 {formatMD(t.endDate)}
+                    {formatMD(t.endDate)}
+                  </td>
+                  <td className="muted" style={{ whiteSpace: "nowrap" }}>
+                    {formatMD(t.createdAt)}
                   </td>
                 </tr>
               );
             })}
             {tasks.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={8} className="muted">
                   条件に一致する課題はありません。
                 </td>
               </tr>

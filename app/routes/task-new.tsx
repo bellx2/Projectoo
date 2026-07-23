@@ -6,8 +6,9 @@ import {
 } from "react-router";
 import { TaskForm } from "~/components/TaskForm";
 import { createTask, getDb } from "~/lib/db.server";
+import { toISODate, today } from "~/lib/date";
 import type { Priority, TaskStatus } from "~/lib/types";
-import { isTaskStatus } from "~/lib/status";
+import { isIssueType, isTaskStatus } from "~/lib/status";
 
 export function meta() {
   return [{ title: "課題の追加 | ProjectHub" }];
@@ -37,18 +38,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: "終了日は開始日以降にしてください。" };
   }
 
-  createTask({
+  const typeRaw = form.get("type");
+  const task = createTask({
     title,
     description: String(form.get("description") ?? ""),
     projectId: String(form.get("projectId") ?? ""),
+    type: isIssueType(typeRaw) ? typeRaw : "task",
     assigneeId: String(form.get("assigneeId") ?? ""),
     status,
     priority: (String(form.get("priority") ?? "medium") as Priority),
     startDate,
     endDate,
     parentId: String(form.get("parentId") ?? "") || null,
+    createdAt: toISODate(today()),
   });
-  return redirect("/gantt");
+  return redirect(`/issues/${task.id}`);
 }
 
 export default function TaskNew() {
