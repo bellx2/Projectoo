@@ -7,7 +7,7 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { createKnowledge, getDb } from "~/lib/db.server";
-import { getCurrentMember } from "~/lib/session.server";
+import { requireMember } from "~/lib/session.server";
 import { formatYMD, toISODate, today } from "~/lib/date";
 
 export function meta() {
@@ -35,8 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const me = await getCurrentMember(request);
-  if (!me) throw redirect("/login");
+  const me = await requireMember(request);
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const body = String(form.get("body") ?? "").trim();

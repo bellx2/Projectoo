@@ -10,6 +10,7 @@ import {
   getDb,
   updateTeam,
 } from "~/lib/db.server";
+import { requireMember } from "~/lib/session.server";
 import type { Member } from "~/lib/types";
 
 export function meta() {
@@ -22,6 +23,7 @@ export async function loader() {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  await requireMember(request);
   const form = await request.formData();
   const intent = form.get("intent");
   const memberIds = form.getAll("memberIds").map(String);

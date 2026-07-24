@@ -5,6 +5,7 @@ import {
   type ActionFunctionArgs,
 } from "react-router";
 import { createMember, deleteMember, getDb } from "~/lib/db.server";
+import { requireMember } from "~/lib/session.server";
 
 export function meta() {
   return [{ title: "メンバー | ProjectHub" }];
@@ -32,6 +33,7 @@ export async function loader() {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  await requireMember(request);
   const form = await request.formData();
   const intent = form.get("intent");
   const db = getDb();
@@ -56,10 +58,11 @@ export async function action({ request }: ActionFunctionArgs) {
     const hasTasks = db.tasks.some((t) => t.assigneeId === id);
     const hasComments = db.comments.some((c) => c.authorId === id);
     const hasKnowledge = db.knowledge.some((k) => k.authorId === id);
-    if (hasTasks || hasComments || hasKnowledge) {
+    const hasActivities = db.activities.some((a) => a.memberId === id);
+    if (hasTasks || hasComments || hasKnowledge || hasActivities) {
       return {
         error:
-          "担当課題・コメント・Wiki記事があるメンバーは削除できません。先に担当を変更してください。",
+          "担当課題・コメント・Wiki記事・変更履歴があるメンバーは削除できません。先に担当を変更してください。",
       };
     }
     deleteMember(id);

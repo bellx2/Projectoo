@@ -1,4 +1,6 @@
+import type { LoaderFunctionArgs } from "react-router";
 import { getDb } from "~/lib/db.server";
+import { requireMember } from "~/lib/session.server";
 import {
   PRIORITY_LABEL,
   STATUS_LABEL,
@@ -7,7 +9,8 @@ import {
 } from "~/lib/status";
 
 // Excel でそのまま開ける UTF-8(BOM 付き) CSV を返す
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requireMember(request);
   const db = getDb();
   const memberName = (id: string) =>
     db.members.find((m) => m.id === id)?.name ?? "";
@@ -19,7 +22,11 @@ export async function loader() {
   const projectCode = (id: string) =>
     db.projects.find((p) => p.id === id)?.code ?? "";
 
-  const esc = (v: string) => `"${v.replaceAll('"', '""')}"`;
+  // 先頭が =+-@ のセルは Excel に式として評価されないよう ' を付ける
+  const esc = (v: string) => {
+    const safe = /^[=+\-@]/.test(v) ? `'${v}` : v;
+    return `"${safe.replaceAll('"', '""')}"`;
+  };
   const header = [
     "キー",
     "種別",

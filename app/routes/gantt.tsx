@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Form, Link, useLoaderData, useSearchParams } from "react-router";
+import {
+  Form,
+  Link,
+  useLoaderData,
+  useSearchParams,
+  useSubmit,
+} from "react-router";
 import { getDb } from "~/lib/db.server";
 import {
   addDays,
@@ -40,13 +46,19 @@ interface Row {
 }
 
 function buildRows(tasks: Task[], memberId: string, collapsed: Set<string>): Row[] {
-  const mine = tasks.filter((t) => t.assigneeId === memberId);
   const byStart = (a: Task, b: Task) =>
     a.startDate.localeCompare(b.startDate) || a.id.localeCompare(b.id);
-  const roots = mine.filter((t) => t.parentId === null).sort(byStart);
+  const visibleIds = new Set(tasks.map((t) => t.id));
+  // 親が表示対象外 (削除済み・完了で非表示など) の課題はルート扱いにして、
+  // どのグループにも出ない「消える課題」を防ぐ
+  const isRoot = (t: Task) => t.parentId === null || !visibleIds.has(t.parentId);
+  const roots = tasks
+    .filter((t) => isRoot(t) && t.assigneeId === memberId)
+    .sort(byStart);
   const rows: Row[] = [];
   for (const root of roots) {
-    const children = mine.filter((t) => t.parentId === root.id).sort(byStart);
+    // 子課題は担当者が違っても親のグループ配下に表示する
+    const children = tasks.filter((t) => t.parentId === root.id).sort(byStart);
     rows.push({ task: root, depth: 0, hasChildren: children.length > 0 });
     if (!collapsed.has(root.id)) {
       for (const child of children) {
@@ -61,6 +73,7 @@ export default function Gantt() {
   const { members, teams, tasks, rangeStart, numDays, todayStr } =
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
+  const submit = useSubmit();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const hideDone = searchParams.get("done") === "0";
@@ -159,7 +172,7 @@ export default function Gantt() {
             <select
               name="team"
               defaultValue={teamId}
-              onChange={(e) => e.currentTarget.form?.submit()}
+              onChange={(e) => submit(e.currentTarget.form)}
               className="gantt-team-select"
             >
               <option value="">全メンバー</option>
@@ -256,6 +269,7 @@ export default function Gantt() {
                 <MemberGroup
                   key={member.id}
                   member={member}
+                  memberOf={memberOf}
                   rows={rows}
                   closed={groupClosed}
                   onToggle={() => toggle(`g-${member.id}`)}
@@ -276,6 +290,7 @@ export default function Gantt() {
 
 function MemberGroup({
   member,
+  memberOf,
   rows,
   closed,
   onToggle,
@@ -286,6 +301,7 @@ function MemberGroup({
   editMode,
 }: {
   member: Member;
+  memberOf: (id: string) => Member | undefined;
   rows: Row[];
   closed: boolean;
   onToggle: () => void;
@@ -313,7 +329,9 @@ function MemberGroup({
         <div className="g-timeline">{dayCells(`g-${member.id}`)}</div>
       </div>
       {!closed &&
-        rows.map(({ task, depth, hasChildren }) => (
+        rows.map(({ task, depth, hasChildren }) => {
+          const assignee = memberOf(task.assigneeId) ?? member;
+          return (
           <div className="g-row" key={task.id}>
             <div className="g-left c1">
               <div className={"g-task-name" + (depth > 0 ? " child" : "")}>
@@ -347,10 +365,10 @@ function MemberGroup({
             </div>
             <div className="g-left c2">
               <span className="g-assignee">
-                <span className="avatar" style={{ background: member.color }}>
-                  {member.initial}
+                <span className="avatar" style={{ background: assignee.color }}>
+                  {assignee.initial}
                 </span>
-                {member.name}
+                {assignee.name}
               </span>
             </div>
             <div className="g-timeline">
@@ -358,7 +376,8 @@ function MemberGroup({
               {barFor(task)}
             </div>
           </div>
-        ))}
+          );
+        })}
     </>
   );
 }

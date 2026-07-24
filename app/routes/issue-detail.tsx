@@ -14,7 +14,7 @@ import {
   nowStamp,
   updateTask,
 } from "~/lib/db.server";
-import { getCurrentMember } from "~/lib/session.server";
+import { requireMember } from "~/lib/session.server";
 import { formatYMD } from "~/lib/date";
 import {
   PRIORITY_ARROW,
@@ -67,6 +67,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  const me = await requireMember(request);
   const form = await request.formData();
   const intent = form.get("intent");
   const id = params.id!;
@@ -79,15 +80,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "status") {
     const status = form.get("status");
     if (isTaskStatus(status)) {
-      const me = await getCurrentMember(request);
-      updateTask(id, { status }, me?.id);
+      updateTask(id, { status }, me.id);
     }
     return { ok: true };
   }
 
   if (intent === "comment") {
-    const me = await getCurrentMember(request);
-    if (!me) throw redirect("/login");
     const body = String(form.get("body") ?? "").trim();
     if (body) {
       createComment({

@@ -5,6 +5,7 @@ import {
   type ActionFunctionArgs,
 } from "react-router";
 import { createProject, getDb } from "~/lib/db.server";
+import { requireMember } from "~/lib/session.server";
 import { formatYMD } from "~/lib/date";
 import { PROJECT_STATUS_LABEL } from "~/lib/status";
 import type { ProjectStatus } from "~/lib/types";
@@ -19,6 +20,7 @@ export async function loader() {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  await requireMember(request);
   const form = await request.formData();
   const name = String(form.get("name") ?? "").trim();
   const code = String(form.get("code") ?? "").trim().toUpperCase();

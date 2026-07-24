@@ -7,7 +7,7 @@ import {
 } from "react-router";
 import { TaskForm } from "~/components/TaskForm";
 import { createTask, getDb } from "~/lib/db.server";
-import { getCurrentMember } from "~/lib/session.server";
+import { getCurrentMember, requireMember } from "~/lib/session.server";
 import { toISODate, today } from "~/lib/date";
 import type { Priority, TaskStatus } from "~/lib/types";
 import { isIssueType, isTaskStatus } from "~/lib/status";
@@ -28,6 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const me = await requireMember(request);
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
   const startDate = String(form.get("startDate") ?? "");
@@ -42,7 +43,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: "終了日は開始日以降にしてください。" };
   }
 
-  const me = await getCurrentMember(request);
+  // 親課題は「親を持たない課題」だけ許可 (2階層まで)
+  const parentId = String(form.get("parentId") ?? "") || null;
+  if (parentId) {
+    const parent = getDb().tasks.find((t) => t.id === parentId);
+    if (!parent || parent.parentId !== null) {
+      return { error: "指定した親課題は親に設定できません。" };
+    }
+  }
+
   const typeRaw = form.get("type");
   const task = createTask({
     title,
@@ -54,9 +63,9 @@ export async function action({ request }: ActionFunctionArgs) {
     priority: (String(form.get("priority") ?? "medium") as Priority),
     startDate,
     endDate,
-    parentId: String(form.get("parentId") ?? "") || null,
+    parentId,
     createdAt: toISODate(today()),
-  }, me?.id);
+  }, me.id);
   return redirect(`/issues/${task.id}`);
 }
 

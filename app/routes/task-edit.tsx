@@ -7,7 +7,7 @@ import {
 } from "react-router";
 import { TaskForm } from "~/components/TaskForm";
 import { deleteTask, getDb, updateTask } from "~/lib/db.server";
-import { getCurrentMember } from "~/lib/session.server";
+import { requireMember } from "~/lib/session.server";
 import type { Priority, TaskStatus } from "~/lib/types";
 import { isIssueType, isTaskStatus } from "~/lib/status";
 
@@ -21,17 +21,21 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!task) {
     throw new Response("Not Found", { status: 404 });
   }
+  const hasChildren = db.tasks.some((t) => t.parentId === task.id);
   return {
     task,
     members: db.members,
     projects: db.projects,
-    parentCandidates: db.tasks.filter(
-      (t) => t.parentId === null && t.id !== task.id,
-    ),
+    // 子課題を持つ課題は親を設定できない (2階層まで)
+    parentCandidates: hasChildren
+      ? []
+      : db.tasks.filter((t) => t.parentId === null && t.id !== task.id),
+    hasChildren,
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  const me = await requireMember(request);
   const form = await request.formData();
   const id = params.id!;
 
@@ -53,7 +57,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: "終了日は開始日以降にしてください。" };
   }
 
-  const me = await getCurrentMember(request);
+  // 親課題は「親を持たない・自分以外」の課題だけ許可 (2階層まで)。
+  // 自分が子課題を持つ場合は親を設定できない。
+  const db = getDb();
+  const parentId = String(form.get("parentId") ?? "") || null;
+  if (parentId) {
+    const parent = db.tasks.find((t) => t.id === parentId);
+    const hasChildren = db.tasks.some((t) => t.parentId === id);
+    if (!parent || parent.parentId !== null || parent.id === id || hasChildren) {
+      return { error: "指定した親課題は親に設定できません。" };
+    }
+  }
+
   const typeRaw = form.get("type");
   updateTask(id, {
     title,
@@ -65,13 +80,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     priority: (String(form.get("priority") ?? "medium") as Priority),
     startDate,
     endDate,
-    parentId: String(form.get("parentId") ?? "") || null,
-  }, me?.id);
+    parentId,
+  }, me.id);
   return redirect(`/issues/${id}`);
 }
 
 export default function TaskEdit() {
-  const { task, members, projects, parentCandidates } =
+  const { task, members, projects, parentCandidates, hasChildren } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -90,6 +105,7 @@ export default function TaskEdit() {
         parentCandidates={parentCandidates}
         error={actionData?.error}
         showDelete
+        hasChildren={hasChildren}
       />
     </div>
   );

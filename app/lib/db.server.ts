@@ -532,9 +532,15 @@ export function updateTask(
 
 export function deleteTask(id: string) {
   const db = getDb();
-  const removed = new Set(
-    db.tasks.filter((t) => t.id === id || t.parentId === id).map((t) => t.id),
-  );
+  // 子孫を再帰的に収集して丸ごと削除する
+  const removed = new Set<string>();
+  const collect = (targetId: string) => {
+    removed.add(targetId);
+    for (const t of db.tasks) {
+      if (t.parentId === targetId && !removed.has(t.id)) collect(t.id);
+    }
+  };
+  collect(id);
   db.tasks = db.tasks.filter((t) => !removed.has(t.id));
   db.comments = db.comments.filter((c) => !removed.has(c.taskId));
   db.activities = db.activities.filter((a) => !removed.has(a.taskId));

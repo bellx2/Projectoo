@@ -3,6 +3,7 @@ import {
   Form,
   Link,
   useLoaderData,
+  useSubmit,
   type LoaderFunctionArgs,
 } from "react-router";
 import { getDb } from "~/lib/db.server";
@@ -85,6 +86,7 @@ function CopyButton({ text }: { text: string }) {
 export default function Report() {
   const { reports, markdown, members, teams, memberParam, w, ws, we } =
     useLoaderData<typeof loader>();
+  const submit = useSubmit();
 
   const weekLink = (offset: number) =>
     `?w=${offset}&member=${encodeURIComponent(memberParam)}`;
@@ -124,7 +126,7 @@ export default function Report() {
           <select
             name="member"
             defaultValue={memberParam}
-            onChange={(e) => e.currentTarget.form?.submit()}
+            onChange={(e) => submit(e.currentTarget.form)}
           >
             <optgroup label="メンバー">
               {members.map((m) => (

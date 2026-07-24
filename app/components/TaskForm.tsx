@@ -4,6 +4,7 @@ import {
   STATUS_LABEL,
   STATUS_ORDER,
   TYPE_LABEL,
+  issueKey,
 } from "~/lib/status";
 import type { Member, Project, Task } from "~/lib/types";
 
@@ -15,6 +16,7 @@ export function TaskForm({
   error,
   showDelete,
   defaultAssigneeId,
+  hasChildren,
 }: {
   task?: Task;
   members: Member[];
@@ -23,7 +25,12 @@ export function TaskForm({
   error?: string;
   showDelete?: boolean;
   defaultAssigneeId?: string;
+  hasChildren?: boolean;
 }) {
+  const parentLabel = (t: Task) => {
+    const p = projects.find((x) => x.id === t.projectId);
+    return `${p ? issueKey(p.code, t.key) : `#${t.key}`} ${t.title}`;
+  };
   return (
     <div className="card panel" style={{ maxWidth: 760 }}>
       {error && (
@@ -116,14 +123,24 @@ export function TaskForm({
         </div>
         <div className="field full">
           <label htmlFor="t-parent">親課題</label>
-          <select id="t-parent" name="parentId" defaultValue={task?.parentId ?? ""}>
-            <option value="">なし</option>
-            {parentCandidates.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
+          {hasChildren ? (
+            <p className="muted" style={{ margin: 0 }}>
+              子課題を持つ課題には親を設定できません (2階層まで)。
+            </p>
+          ) : (
+            <select
+              id="t-parent"
+              name="parentId"
+              defaultValue={task?.parentId ?? ""}
+            >
+              <option value="">なし</option>
+              {parentCandidates.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {parentLabel(p)}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="field full">
           <label htmlFor="t-desc">詳細</label>

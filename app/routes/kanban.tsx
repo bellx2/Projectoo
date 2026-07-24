@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link,
   useFetcher,
@@ -6,7 +6,7 @@ import {
   type ActionFunctionArgs,
 } from "react-router";
 import { createTask, getDb, updateTask } from "~/lib/db.server";
-import { getCurrentMember } from "~/lib/session.server";
+import { requireMember } from "~/lib/session.server";
 import { addDays, formatMD, parseISODate, toISODate, today } from "~/lib/date";
 import {
   PRIORITY_ARROW,
@@ -29,6 +29,7 @@ export async function loader() {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const me = await requireMember(request);
   const form = await request.formData();
   const intent = form.get("intent");
 
@@ -36,8 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const taskId = String(form.get("taskId") ?? "");
     const status = form.get("status");
     if (taskId && isTaskStatus(status)) {
-      const me = await getCurrentMember(request);
-      updateTask(taskId, { status }, me?.id);
+      updateTask(taskId, { status }, me.id);
     }
     return { ok: true };
   }
@@ -47,21 +47,20 @@ export async function action({ request }: ActionFunctionArgs) {
     const status = form.get("status");
     if (title && isTaskStatus(status)) {
       const db = getDb();
-      const me = await getCurrentMember(request);
       const base = today();
       createTask({
         title,
         description: "",
         projectId: db.projects[0]?.id ?? "",
         type: "task",
-        assigneeId: me?.id ?? db.members[0]?.id ?? "",
+        assigneeId: me.id,
         status,
         priority: "medium",
         startDate: toISODate(base),
         endDate: toISODate(addDays(base, 3)),
         parentId: null,
         createdAt: toISODate(base),
-      }, me?.id);
+      }, me.id);
     }
     return { ok: true };
   }
@@ -76,19 +75,30 @@ export default function Kanban() {
 
   const todayStr = toISODate(today());
 
-  // 楽観的更新: 移動中のタスクは移動先カラムに表示する
-  const pendingMove =
-    fetcher.formData?.get("intent") === "move"
-      ? {
-          taskId: String(fetcher.formData.get("taskId")),
-          status: fetcher.formData.get("status") as TaskStatus,
-        }
-      : null;
+  // 楽観的更新: 移動中のタスクは移動先カラムに表示する。
+  // 連続ドラッグでも巻き戻らないよう、タスクごとの移動先をローカルに保持し、
+  // サーバー側のデータが追いついたエントリから消していく。
+  const [pendingMoves, setPendingMoves] = useState<Record<string, TaskStatus>>(
+    {},
+  );
+
+  useEffect(() => {
+    setPendingMoves((prev) => {
+      const entries = Object.entries(prev).filter(([taskId, status]) => {
+        const task = tasks.find((t) => t.id === taskId);
+        return task !== undefined && task.status !== status;
+      });
+      return entries.length === Object.keys(prev).length
+        ? prev
+        : Object.fromEntries(entries);
+    });
+  }, [tasks]);
 
   const effectiveStatus = (t: Task): TaskStatus =>
-    pendingMove && pendingMove.taskId === t.id ? pendingMove.status : t.status;
+    pendingMoves[t.id] ?? t.status;
 
   const move = (taskId: string, status: TaskStatus) => {
+    setPendingMoves((prev) => ({ ...prev, [taskId]: status }));
     fetcher.submit({ intent: "move", taskId, status }, { method: "post" });
   };
 

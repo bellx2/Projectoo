@@ -7,6 +7,7 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { deleteKnowledge, getDb } from "~/lib/db.server";
+import { requireMember } from "~/lib/session.server";
 import { formatYMD } from "~/lib/date";
 
 export function meta({ data }: { data?: { article?: { title: string } } }) {
@@ -25,7 +26,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return { article, author };
 }
 
-export async function action({ params }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
+  await requireMember(request);
   if (params.id) deleteKnowledge(params.id);
   return redirect("/knowledge");
 }
