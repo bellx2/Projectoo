@@ -1,14 +1,28 @@
-import { Link, useLoaderData } from "react-router";
+import {
+  Link,
+  useLoaderData,
+  type LoaderFunctionArgs,
+} from "react-router";
 import { getDb } from "~/lib/db.server";
-import { formatMD, toISODate, today } from "~/lib/date";
+import { getCurrentMember } from "~/lib/session.server";
+import {
+  addDays,
+  formatMD,
+  formatYMD,
+  startOfWeek,
+  toISODate,
+  today,
+} from "~/lib/date";
+import { buildMemberReport } from "~/lib/report.server";
 import { STATUS_LABEL, STATUS_ORDER } from "~/lib/status";
 
 export function meta() {
   return [{ title: "ダッシュボード | ProjectHub" }];
 }
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
   const db = getDb();
+  const me = await getCurrentMember(request);
   const recentComments = [...db.comments]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 5)
@@ -16,19 +30,39 @@ export async function loader() {
       ...c,
       task: db.tasks.find((t) => t.id === c.taskId) ?? null,
     }));
+
+  const base = today();
+  const ws = toISODate(startOfWeek(base));
+  const we = toISODate(addDays(startOfWeek(base), 6));
+  const miniReport = me
+    ? buildMemberReport(db, me, ws, we, toISODate(base))
+    : null;
+
   return {
     members: db.members,
     projects: db.projects,
     tasks: db.tasks,
     knowledge: db.knowledge.slice(0, 4),
     recentComments,
+    miniReport,
+    ws,
+    we,
     todayStr: toISODate(today()),
   };
 }
 
 export default function Dashboard() {
-  const { members, projects, tasks, knowledge, recentComments, todayStr } =
-    useLoaderData<typeof loader>();
+  const {
+    members,
+    projects,
+    tasks,
+    knowledge,
+    recentComments,
+    miniReport,
+    ws,
+    we,
+    todayStr,
+  } = useLoaderData<typeof loader>();
 
   const count = (s: string) => tasks.filter((t) => t.status === s).length;
   const doneRate =
@@ -80,6 +114,89 @@ export default function Dashboard() {
 
       <div className="dash-grid">
         <div>
+          {miniReport && (
+            <div className="card panel mini-report">
+              <div className="mini-report-head">
+                <h2>
+                  今週の自分
+                  <span className="muted" style={{ fontWeight: 500 }}>
+                    {" "}
+                    {formatYMD(ws)} 〜 {formatYMD(we)}
+                  </span>
+                </h2>
+                <Link to="/report" className="btn small">
+                  週報を見る →
+                </Link>
+              </div>
+
+              <div className="mini-section">
+                <div className="mini-label">✅ 今週やったこと</div>
+                {miniReport.done.length === 0 &&
+                  miniReport.progressComments.length === 0 && (
+                    <p className="report-empty">
+                      まだ実績がありません。課題を進めるとここに載ります。
+                    </p>
+                  )}
+                {miniReport.done.map((d) => (
+                  <div className="list-row" key={`d-${d.taskId}`}>
+                    <span className="ikey">{d.keyLabel}</span>
+                    <span className="grow">
+                      <Link to={`/issues/${d.taskId}`}>{d.title}</Link>
+                    </span>
+                    <span className={`badge st-${d.to}`}>{d.toLabel}</span>
+                  </div>
+                ))}
+                {miniReport.progressComments.slice(0, 3).map((c, i) => (
+                  <div className="list-row" key={`c-${i}`}>
+                    <span className="ikey">{c.keyLabel}</span>
+                    <span className="grow">
+                      <Link to={`/issues/${c.taskId}`}>{c.title}</Link>{" "}
+                      <span className="muted">— 「{c.body.split("\n")[0]}」</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mini-section">
+                <div className="mini-label">🔄 進行中 ({miniReport.inProgress.length})</div>
+                {miniReport.inProgress.length === 0 && (
+                  <p className="report-empty">進行中の課題はありません。</p>
+                )}
+                {miniReport.inProgress.map((t) => (
+                  <div className="list-row" key={t.taskId}>
+                    <span className="ikey">{t.keyLabel}</span>
+                    <span className="grow">
+                      <Link to={`/issues/${t.taskId}`}>{t.title}</Link>
+                    </span>
+                    <span className={"muted" + (t.overdue ? " overdue" : "")}>
+                      期限 {formatMD(t.endDate)}
+                      {t.overdue && " ⚠"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {miniReport.overdue.length > 0 && (
+                <div className="mini-section">
+                  <div className="mini-label overdue">
+                    ⚠ 期限超過 ({miniReport.overdue.length})
+                  </div>
+                  {miniReport.overdue.map((t) => (
+                    <div className="list-row" key={t.taskId}>
+                      <span className="ikey">{t.keyLabel}</span>
+                      <span className="grow">
+                        <Link to={`/issues/${t.taskId}`}>{t.title}</Link>
+                      </span>
+                      <span className="muted overdue">
+                        期限 {formatMD(t.endDate)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="card panel">
             <h2>案件の進捗</h2>
             {projects.map((p) => {

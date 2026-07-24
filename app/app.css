@@ -1050,6 +1050,33 @@ details.collapse > summary::-webkit-details-marker {
   margin-top: 2px;
 }
 
+/* ---------- mini report (dashboard) ---------- */
+.mini-report {
+  border-left: 3px solid var(--accent);
+}
+.mini-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.mini-report-head h2 {
+  margin: 0;
+}
+.mini-section {
+  margin-top: 10px;
+}
+.mini-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+.mini-label.overdue {
+  color: #b91c1c;
+}
+
 /* ---------- report ---------- */
 .report-toolbar {
   display: flex;
