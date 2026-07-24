@@ -145,9 +145,12 @@ function buildMarkdown(
   reports: MemberReport[],
   ws: string,
   we: string,
+  scopeLabel: string,
 ): string {
   const lines: string[] = [];
-  lines.push(`# 週報 ${formatYMD(ws)} 〜 ${formatYMD(we)}`);
+  lines.push(
+    `# 週報 ${formatYMD(ws)} 〜 ${formatYMD(we)}${scopeLabel ? ` (${scopeLabel})` : ""}`,
+  );
   for (const r of reports) {
     lines.push("");
     lines.push(`## ${r.member.name}`);
@@ -197,10 +200,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const me = await getCurrentMember(request);
 
   const memberParam = url.searchParams.get("member") ?? me?.id ?? "all";
-  const targets =
-    memberParam === "all"
-      ? db.members
-      : db.members.filter((m) => m.id === memberParam);
+
+  let targets = db.members;
+  let scopeLabel = "全員";
+  if (memberParam.startsWith("team:")) {
+    const team = db.teams.find((t) => t.id === memberParam.slice(5));
+    targets = team
+      ? db.members.filter((m) => team.memberIds.includes(m.id))
+      : [];
+    scopeLabel = team?.name ?? "チーム";
+  } else if (memberParam !== "all") {
+    targets = db.members.filter((m) => m.id === memberParam);
+    scopeLabel = targets[0]?.name ?? "";
+  }
 
   const base = today();
   const ws = toISODate(addDays(startOfWeek(base), w * 7));
@@ -210,13 +222,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const reports = targets.map((m) =>
     buildMemberReport(db, m, ws, we, todayStr),
   );
-  const markdown = buildMarkdown(reports, ws, we);
+  const markdown = buildMarkdown(reports, ws, we, scopeLabel);
 
   return {
     reports,
     markdown,
     members: db.members,
+    teams: db.teams,
     memberParam,
+    scopeLabel,
     w,
     ws,
     we,
@@ -241,7 +255,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function Report() {
-  const { reports, markdown, members, memberParam, w, ws, we } =
+  const { reports, markdown, members, teams, memberParam, w, ws, we } =
     useLoaderData<typeof loader>();
 
   const weekLink = (offset: number) =>
@@ -284,12 +298,23 @@ export default function Report() {
             defaultValue={memberParam}
             onChange={(e) => e.currentTarget.form?.submit()}
           >
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-            <option value="all">全員 (チーム週報)</option>
+            <optgroup label="メンバー">
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </optgroup>
+            {teams.length > 0 && (
+              <optgroup label="チーム">
+                {teams.map((t) => (
+                  <option key={t.id} value={`team:${t.id}`}>
+                    {t.name} ({t.memberIds.length}人)
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <option value="all">全員</option>
           </select>
         </Form>
       </div>

@@ -25,6 +25,7 @@ export async function loader() {
   const db = getDb();
   return {
     members: db.members,
+    teams: db.teams,
     tasks: db.tasks,
     comments: db.comments,
   };
@@ -69,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Members() {
-  const { members, tasks } = useLoaderData<typeof loader>();
+  const { members, teams, tasks } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   return (
@@ -92,6 +93,7 @@ export default function Members() {
           <thead>
             <tr>
               <th>メンバー</th>
+              <th>所属チーム</th>
               <th>担当課題</th>
               <th>対応中</th>
               <th style={{ width: 100 }}></th>
@@ -103,6 +105,7 @@ export default function Members() {
               const active = mine.filter(
                 (t) => t.status === "open" || t.status === "in_progress",
               ).length;
+              const myTeams = teams.filter((t) => t.memberIds.includes(m.id));
               return (
                 <tr key={m.id}>
                   <td>
@@ -111,6 +114,18 @@ export default function Members() {
                         {m.initial}
                       </span>
                       <strong>{m.name}</strong>
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap" }}>
+                      {myTeams.map((t) => (
+                        <span key={t.id} className="chip">
+                          {t.name}
+                        </span>
+                      ))}
+                      {myTeams.length === 0 && (
+                        <span className="muted">未所属</span>
+                      )}
                     </span>
                   </td>
                   <td className="muted">{mine.length} 件</td>

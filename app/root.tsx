@@ -99,6 +99,19 @@ const NAV_ITEMS = [
     ),
   },
   {
+    to: "/teams",
+    label: "チーム",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <circle cx="10" cy="6" r="2.6" />
+        <path d="M5.5 16c.5-2.8 2.2-4.2 4.5-4.2s4 1.4 4.5 4.2" />
+        <circle cx="4.2" cy="8" r="1.8" />
+        <circle cx="15.8" cy="8" r="1.8" />
+        <path d="M1.8 14.5c.3-1.9 1.3-3 2.9-3.2M18.2 14.5c-.3-1.9-1.3-3-2.9-3.2" />
+      </svg>
+    ),
+  },
+  {
     to: "/members",
     label: "メンバー",
     icon: (

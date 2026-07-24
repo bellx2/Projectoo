@@ -10,6 +10,12 @@ export interface Member {
   color: string;
 }
 
+export interface Team {
+  id: string;
+  name: string;
+  memberIds: string[];
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -66,6 +72,7 @@ export interface Knowledge {
 
 export interface Database {
   members: Member[];
+  teams: Team[];
   projects: Project[];
   tasks: Task[];
   comments: Comment[];

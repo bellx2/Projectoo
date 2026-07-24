@@ -4,6 +4,7 @@ export default [
   route("login", "routes/login.tsx"),
   route("logout", "routes/logout.ts"),
   route("members", "routes/members.tsx"),
+  route("teams", "routes/teams.tsx"),
   index("routes/dashboard.tsx"),
   route("kanban", "routes/kanban.tsx"),
   route("gantt", "routes/gantt.tsx"),

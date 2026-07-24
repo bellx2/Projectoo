@@ -9,6 +9,7 @@ import type {
   Member,
   Project,
   Task,
+  Team,
 } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -27,6 +28,12 @@ function seed(): Database {
     { id: "m1", name: "やむぅ", initial: "Y", color: "#0e9f6e" },
     { id: "m2", name: "みなみ", initial: "M", color: "#0d9488" },
     { id: "m3", name: "かずき", initial: "K", color: "#059669" },
+  ];
+
+  const teams: Team[] = [
+    { id: "team1", name: "開発チーム", memberIds: ["m1", "m2", "m3"] },
+    { id: "team2", name: "UI/UXチーム", memberIds: ["m1", "m2"] },
+    { id: "team3", name: "EC推進チーム", memberIds: ["m2", "m3"] },
   ];
 
   const projects: Project[] = [
@@ -396,13 +403,14 @@ function seed(): Database {
     },
   ];
 
-  return { members, projects, tasks, comments, activities, knowledge };
+  return { members, teams, projects, tasks, comments, activities, knowledge };
 }
 
 // 旧フォーマットの db.json を読んだ場合に不足フィールドを補完する
 function migrate(db: Database): Database {
   if (!db.comments) db.comments = [];
   if (!db.activities) db.activities = [];
+  if (!db.teams) db.teams = [];
   const counters = new Map<string, number>();
   for (const t of db.tasks) {
     if (typeof t.key === "number") {
@@ -552,6 +560,35 @@ export function createMember(input: Omit<Member, "id">): Member {
 export function deleteMember(id: string) {
   const db = getDb();
   db.members = db.members.filter((m) => m.id !== id);
+  for (const team of db.teams) {
+    team.memberIds = team.memberIds.filter((m) => m !== id);
+  }
+  save();
+}
+
+export function createTeam(input: Omit<Team, "id">): Team {
+  const db = getDb();
+  const team: Team = { ...input, id: newId("team") };
+  db.teams.push(team);
+  save();
+  return team;
+}
+
+export function updateTeam(
+  id: string,
+  patch: Partial<Omit<Team, "id">>,
+): Team | null {
+  const db = getDb();
+  const team = db.teams.find((t) => t.id === id);
+  if (!team) return null;
+  Object.assign(team, patch);
+  save();
+  return team;
+}
+
+export function deleteTeam(id: string) {
+  const db = getDb();
+  db.teams = db.teams.filter((t) => t.id !== id);
   save();
 }
 

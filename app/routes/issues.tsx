@@ -24,6 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const projectId = url.searchParams.get("project") ?? "";
   const status = url.searchParams.get("status") ?? "";
   const assigneeId = url.searchParams.get("assignee") ?? "";
+  const teamId = url.searchParams.get("team") ?? "";
   const q = url.searchParams.get("q") ?? "";
 
   const db = getDb();
@@ -31,6 +32,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (projectId) tasks = tasks.filter((t) => t.projectId === projectId);
   if (status) tasks = tasks.filter((t) => t.status === status);
   if (assigneeId) tasks = tasks.filter((t) => t.assigneeId === assigneeId);
+  if (teamId) {
+    const team = db.teams.find((t) => t.id === teamId);
+    const ids = new Set(team?.memberIds ?? []);
+    tasks = tasks.filter((t) => ids.has(t.assigneeId));
+  }
   if (q) {
     const needle = q.toLowerCase();
     tasks = tasks.filter(
@@ -44,14 +50,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     tasks,
     members: db.members,
+    teams: db.teams,
     projects: db.projects,
-    filters: { projectId, status, assigneeId, q },
+    filters: { projectId, status, assigneeId, teamId, q },
     todayStr: toISODate(today()),
   };
 }
 
 export default function Issues() {
-  const { tasks, members, projects, filters, todayStr } =
+  const { tasks, members, teams, projects, filters, todayStr } =
     useLoaderData<typeof loader>();
 
   return (
@@ -88,6 +95,14 @@ export default function Issues() {
           {members.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
+            </option>
+          ))}
+        </select>
+        <select name="team" defaultValue={filters.teamId}>
+          <option value="">すべてのチーム</option>
+          {teams.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
             </option>
           ))}
         </select>

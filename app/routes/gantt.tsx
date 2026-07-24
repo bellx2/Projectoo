@@ -24,6 +24,7 @@ export async function loader() {
   const rangeStart = toISODate(addDays(base, -9));
   return {
     members: db.members,
+    teams: db.teams,
     tasks: db.tasks,
     projects: db.projects,
     rangeStart,
@@ -57,7 +58,7 @@ function buildRows(tasks: Task[], memberId: string, collapsed: Set<string>): Row
 }
 
 export default function Gantt() {
-  const { members, tasks, rangeStart, numDays, todayStr } =
+  const { members, teams, tasks, rangeStart, numDays, todayStr } =
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -65,10 +66,16 @@ export default function Gantt() {
   const hideDone = searchParams.get("done") === "0";
   const shadeWeekend = searchParams.get("wk") !== "0";
   const editMode = searchParams.get("edit") === "1";
+  const teamId = searchParams.get("team") ?? "";
 
   const visibleTasks = hideDone
     ? tasks.filter((t) => t.status !== "done")
     : tasks;
+
+  const selectedTeam = teams.find((t) => t.id === teamId);
+  const visibleMembers = selectedTeam
+    ? members.filter((m) => selectedTeam.memberIds.includes(m.id))
+    : members;
 
   const start = parseISODate(rangeStart);
   const days = Array.from({ length: numDays }, (_, i) => addDays(start, i));
@@ -145,10 +152,29 @@ export default function Gantt() {
               </span>
             ))}
           </div>
+          <Form method="get" style={{ display: "inline-flex" }}>
+            {hideDone && <input type="hidden" name="done" value="0" />}
+            {!shadeWeekend && <input type="hidden" name="wk" value="0" />}
+            {editMode && <input type="hidden" name="edit" value="1" />}
+            <select
+              name="team"
+              defaultValue={teamId}
+              onChange={(e) => e.currentTarget.form?.submit()}
+              className="gantt-team-select"
+            >
+              <option value="">全メンバー</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </Form>
           <details className="settings-pop">
             <summary className="btn">⚙ 表示設定</summary>
             <Form method="get" className="settings-menu">
               {editMode && <input type="hidden" name="edit" value="1" />}
+              {teamId && <input type="hidden" name="team" value={teamId} />}
               <label>
                 <input
                   type="checkbox"
@@ -223,7 +249,7 @@ export default function Gantt() {
               </div>
             </div>
 
-            {members.map((member) => {
+            {visibleMembers.map((member) => {
               const rows = buildRows(visibleTasks, member.id, collapsed);
               const groupClosed = collapsed.has(`g-${member.id}`);
               return (
